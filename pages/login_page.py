@@ -1,13 +1,12 @@
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
 import allure
+import time
 
 class LoginPage(BasePage):
     USERNAME_FIELD = (By.ID, "user-name")
     PASSWORD_FIELD = (By.ID, "password")
     LOGIN_BUTTON = (By.ID, "login-button")
-    ERROR_MESSAGE = (By.CSS_SELECTOR, "[data-test='error']")
-    SUCCESS_TITLE = (By.CSS_SELECTOR, ".title")
 
     def __init__(self, driver):
         super().__init__(driver)
@@ -16,37 +15,31 @@ class LoginPage(BasePage):
     @allure.step("Открытие страницы логина")
     def open(self):
         self.driver.get(self.url)
+        time.sleep(2)
 
     @allure.step("Ввод логина: {username}")
     def enter_username(self, username):
-        self.find_element(self.USERNAME_FIELD).send_keys(username)
+        field = self.find_element_safe(self.USERNAME_FIELD)
+        field.clear()
+        field.send_keys(username)
+        time.sleep(0.5)  # Стабильность
 
     @allure.step("Ввод пароля: {password}")
     def enter_password(self, password):
-        self.find_element(self.PASSWORD_FIELD).send_keys(password)
+        field = self.find_element_safe(self.PASSWORD_FIELD)
+        field.clear()
+        field.send_keys(password)
+        time.sleep(0.5)
 
     @allure.step("Нажатие кнопки Login")
     def click_login(self):
-        self.find_element(self.LOGIN_BUTTON).click()
+        button = self.find_element_safe(self.LOGIN_BUTTON)
+        button.click()
+        time.sleep(3)  # Ждем JS реакцию
 
-    @allure.step("Логин с данными {username}/{password}")
+    @allure.step("Логин {username}/{password}")
     def login(self, username, password):
         self.open()
         self.enter_username(username)
         self.enter_password(password)
         self.click_login()
-
-    @allure.step("Проверка успешного логина")
-    def should_be_success_page(self):
-        return self.wait_for_url("inventory.html") and \
-               self.find_element(self.SUCCESS_TITLE).text == "Products"
-
-    @allure.step("Проверка ошибки логина")
-    def should_be_error(self):
-        error = self.find_element(self.ERROR_MESSAGE)
-        return "Epic sadface" in error.text
-
-    @allure.step("Проверка пустых полей")
-    def should_have_empty_fields_error(self):
-        error = self.find_element(self.ERROR_MESSAGE)
-        return "Username is required" in error.text or "Password is required" in error.text

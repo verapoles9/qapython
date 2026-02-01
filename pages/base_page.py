@@ -1,7 +1,7 @@
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 import allure
 
 class BasePage:
@@ -18,6 +18,9 @@ class BasePage:
             except TimeoutException:
                 return False
 
-    def find_element(self, locator):
-        """Находит элемент с ожиданием"""
-        return self.wait.until(EC.visibility_of_element_located(locator))
+    def find_element_safe(self, locator, timeout=3):
+        """Находит элемент с коротким ожиданием или без"""
+        try:
+            return self.wait.until(EC.visibility_of_element_located(locator))
+        except TimeoutException:
+            return self.driver.find_element(*locator)
